@@ -61,7 +61,7 @@ module ov7670_init(
     reg [3:0]  bit_cnt = 0;
     reg [7:0]  shreg = 8'd0;
     reg [3:0]  reg_index = 0;
-    reg [19:0] wait_cnt = 0;
+    reg [23:0] wait_cnt = 0;
 
     localparam S_IDLE      = 0,
                S_START1    = 1,
@@ -202,7 +202,7 @@ module ov7670_init(
                 S_STOP2: begin
                     sda_out <= 1'b1;
                     if (reg_index == 0) begin
-                        wait_cnt <= 20'd100000; // ~1ms @100MHz
+                        wait_cnt <= 20'd1000000; // ~10ms @100MHz
                         state <= S_WAIT1MS;
                     end else if (reg_index == 10) begin
                         state <= S_DONE;
