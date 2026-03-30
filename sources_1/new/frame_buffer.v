@@ -1,0 +1,28 @@
+`timescale 1ns / 1ps
+
+module frame_buffer(
+
+    input wire          clk_write,
+    input wire          write_en,
+    input wire [14:0]   write_addr,
+    input wire [15:0]   pixel_in,
+
+    input wire          clk_read,
+    input wire [14:0]   read_addr,
+    output reg [15:0]   pixel_out
+
+);
+
+reg [15:0] mem [0:19199];
+
+// BUG FIX: was mem[read_addr], must use write_addr
+always @(posedge clk_write) begin
+    if(write_en)
+        mem[write_addr] <= pixel_in;
+end
+
+always @(posedge clk_read) begin
+    pixel_out <= mem[read_addr];
+end
+
+endmodule
