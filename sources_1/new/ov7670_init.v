@@ -50,8 +50,8 @@ module ov7670_init(
         rom_addr[5]  = 8'h3D; rom_data[5]  = 8'h88; // COM13: default-ish
         rom_addr[6]  = 8'h0C; rom_data[6]  = 8'h00; // COM3: no scaling
         rom_addr[7]  = 8'h3E; rom_data[7]  = 8'h00; // COM14: normal PCLK
-        rom_addr[8]  = 8'h70; rom_data[8]  = 8'h3A; // SCALING_XSC: test_pattern[0]=1
-        rom_addr[9]  = 8'h71; rom_data[9]  = 8'h35; // SCALING_YSC: test_pattern[1]=0 => 8-bar color bar
+        // rom_addr[8]  = 8'h70; rom_data[8]  = 8'h3A; // SCALING_XSC: test_pattern[0]=1
+        // rom_addr[9]  = 8'h71; rom_data[9]  = 8'h35; // SCALING_YSC: test_pattern[1]=0 => 8-bar color bar
         rom_addr[10] = 8'h15; rom_data[10] = 8'h00; // COM10: default polarity
     end
 
