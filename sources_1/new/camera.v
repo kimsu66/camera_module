@@ -90,16 +90,18 @@ module top(
     
     // =========================
     // Frame buffer read address
-    // 160x120 image -> 640x480 by 4x scaling
+    // 160x120 image -> 1:1 출력 (화면 좌상단)
     // =========================
     wire [7:0]  fb_x;
     wire [6:0]  fb_y;
     wire [14:0] read_addr;
     wire [15:0] pixel_out;
+    wire        img_active;
 
-    assign fb_x     = vga_x[9:2];              // /4
-    assign fb_y     = vga_y[9:2];              // /4  (use [9:2] for 120 rows)
-    assign read_addr = {fb_y, 7'd0} + {fb_y, 5'd0} + fb_x;
+    assign fb_x      = vga_x[7:0];
+    assign fb_y      = vga_y[6:0];
+    assign img_active = (vga_x < 10'd160) && (vga_y < 10'd120);
+    assign read_addr  = {fb_y, 7'd0} + {fb_y, 5'd0} + fb_x;
     // = fb_y*128 + fb_y*32 + fb_x = fb_y*160 + fb_x
     // (avoids multiplication in synthesizer)
  
@@ -113,18 +115,24 @@ module top(
         .write_addr(write_addr),
         .pixel_in  (pixel_data),
  
-        .clk_read  (clk_25mhz),   // same domain as VGA
+        .clk_read  (clk_25mhz),   // same domain as VGA                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
         .read_addr (read_addr),
         .pixel_out (pixel_out)
     );
 
     // =========================
-    // VGA color output
-    // RGB565 -> RGB444
+    // VGA color output (grayscale)
+    // RGB565 -> gray4: (R + 2*G + B) >> 2
     // =========================
-    assign vgaRed   = vga_active ? pixel_out[15:12] : 4'b0000;
-    assign vgaGreen = vga_active ? pixel_out[10:7]  : 4'b0000;
-    assign vgaBlue  = vga_active ? pixel_out[4:1]   : 4'b0000;
+    wire [3:0] r4    = pixel_out[15:12];
+    wire [3:0] g4    = pixel_out[10:7];
+    wire [3:0] b4    = pixel_out[4:1];
+    wire [5:0] gray6 = {2'b0, r4} + {1'b0, g4, 1'b0} + {2'b0, b4};
+    wire [3:0] gray4 = gray6[5:2];
+
+    assign vgaRed   = (vga_active && img_active) ? gray4 : 4'b0000;
+    assign vgaGreen = (vga_active && img_active) ? gray4 : 4'b0000;
+    assign vgaBlue  = (vga_active && img_active) ? gray4 : 4'b0000;
 
     // =========================
     // LEDs

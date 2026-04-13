@@ -22,7 +22,7 @@ module ov7670_capture(
     always @(posedge pclk) begin
         pixel_valid <= 1'b0;
         vsync_d     <= vsync;
- 
+
         // vsync 상승 엣지: 새 프레임 시작
         if (vsync && !vsync_d) begin
             x        <= 10'd0;
@@ -36,17 +36,15 @@ module ov7670_capture(
                 byte_sel  <= 1'b1;
             end else begin
                 byte_sel <= 1'b0;
- 
-                // x, y 둘 다 4의 배수일 때만 저장
+
+                // x, y 둘 다 4의 배수일 때만 저장 (VGA -> 160x120 서브샘플링)
                 if (x[1:0] == 2'b00 && y[1:0] == 2'b00) begin
                     pixel_data  <= {high_byte, d};
                     pixel_valid <= 1'b1;
                     // addr = (y/4)*160 + (x/4)
-                    // y[8:2] = y/4 (0~119), x[9:2] = x/4 (0~159)
-                    // (y/4)*160 = (y/4)*128 + (y/4)*32
-                    addr <= ({y[8:2], 7'd0} + {y[8:2], 5'd0} + x[9:2]);
+                    addr <= ({1'b0, y[8:2], 7'd0} + {3'b0, y[8:2], 5'd0} + {7'b0, x[9:2]});
                 end
- 
+
                 // x 카운터: 0~639
                 if (x == 10'd639) begin
                     x <= 10'd0;
