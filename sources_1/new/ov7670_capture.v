@@ -24,6 +24,11 @@ module ov7670_capture(
     reg [7:0] g_sum = 8'd0;
     reg [6:0] b_sum = 7'd0;
 
+    // 4번째 픽셀 포함 최종 합산 (combinatorial)
+    wire [6:0] r_final = r_sum + {2'b0, high_byte[7:3]};
+    wire [7:0] g_final = g_sum + {2'b0, high_byte[2:0], d[7:5]};
+    wire [6:0] b_final = b_sum + {2'b0, d[4:0]};
+
     always @(posedge pclk) begin
         pixel_valid <= 1'b0;
         vsync_d     <= vsync;
@@ -56,11 +61,7 @@ module ov7670_capture(
                 // 그룹 마지막(x%4==3), y도 4의 배수일 때 4픽셀 평균 저장
                 // NBA 특성상 r_sum은 앞 3픽셀 합 → 현재 픽셀 직접 합산해서 평균
                 if (x[1:0] == 2'b11 && y[1:0] == 2'b00) begin
-                    pixel_data <= {
-                        (r_sum + {2'b0, high_byte[7:3]})[6:2],
-                        (g_sum + {2'b0, high_byte[2:0], d[7:5]})[7:2],
-                        (b_sum + {2'b0, d[4:0]})[6:2]
-                    };
+                    pixel_data  <= {r_final[6:2], g_final[7:2], b_final[6:2]};
                     pixel_valid <= 1'b1;
                     addr <= ({1'b0, y[8:2], 7'd0} + {3'b0, y[8:2], 5'd0} + {7'b0, x[9:2]});
                 end
