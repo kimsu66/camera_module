@@ -35,8 +35,8 @@ module ov7670_init(
     // -----------------------------------------
     // init ROM - VGA (640x480) RGB565
     // -----------------------------------------
-    reg [7:0] rom_addr [0:10];
-    reg [7:0] rom_data [0:10];
+    reg [7:0] rom_addr [0:13];
+    reg [7:0] rom_data [0:13];
 
     initial begin
         rom_addr[0]  = 8'h12; rom_data[0]  = 8'h80; // COM7: software reset
@@ -50,6 +50,10 @@ module ov7670_init(
         rom_addr[8]  = 8'h70; rom_data[8]  = 8'h3A; // SCALING_XSC
         rom_addr[9]  = 8'h71; rom_data[9]  = 8'h35; // SCALING_YSC
         rom_addr[10] = 8'h15; rom_data[10] = 8'h00; // COM10: normal polarity
+        // Lens shading correction (비네팅 보정)
+        rom_addr[11] = 8'h64; rom_data[11] = 8'h50; // LCC3: 보정 강도
+        rom_addr[12] = 8'h65; rom_data[12] = 8'h20; // LCC4: 보정 반경
+        rom_addr[13] = 8'h66; rom_data[13] = 8'h01; // LCC5: 렌즈 보정 활성화
     end
 
     localparam DEV_WR = 8'h42;
@@ -201,7 +205,7 @@ module ov7670_init(
                     if (reg_index == 0) begin
                         wait_cnt <= 24'd2000; // 10ms @ 200kHz tick
                         state <= S_WAIT1MS;
-                    end else if (reg_index == 10) begin
+                    end else if (reg_index == 13) begin
                         state <= S_DONE;
                     end else begin
                         reg_index <= reg_index + 1'b1;
