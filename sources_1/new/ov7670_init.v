@@ -33,26 +33,23 @@ module ov7670_init(
     end
 
     // -----------------------------------------
-    // init ROM
-    // first: COM7 reset = 0x80
-    // then wait
-    // then QVGA YUV settings
+    // init ROM - VGA (640x480) RGB565
     // -----------------------------------------
     reg [7:0] rom_addr [0:10];
     reg [7:0] rom_data [0:10];
 
     initial begin
-        rom_addr[0]  = 8'h12; rom_data[0]  = 8'h80; // COM7: reset
+        rom_addr[0]  = 8'h12; rom_data[0]  = 8'h80; // COM7: software reset
         rom_addr[1]  = 8'h11; rom_data[1]  = 8'h00; // CLKRC: no prescale
-        rom_addr[2]  = 8'h12; rom_data[2]  = 8'h04; // COM7: RGB565, no color bar
+        rom_addr[2]  = 8'h12; rom_data[2]  = 8'h04; // COM7: RGB565, VGA
         rom_addr[3]  = 8'h40; rom_data[3]  = 8'hD0; // COM15: full range + RGB565
         rom_addr[4]  = 8'h3A; rom_data[4]  = 8'h04; // TSLB: normal sequence
         rom_addr[5]  = 8'h3D; rom_data[5]  = 8'h88; // COM13: default
         rom_addr[6]  = 8'h0C; rom_data[6]  = 8'h00; // COM3: no scaling
         rom_addr[7]  = 8'h3E; rom_data[7]  = 8'h00; // COM14: normal PCLK
-        rom_addr[8]  = 8'h70; rom_data[8]  = 8'h3A; // SCALING_XSC: default
-        rom_addr[9]  = 8'h71; rom_data[9]  = 8'h35; // SCALING_YSC: default
-        rom_addr[10] = 8'h15; rom_data[10] = 8'h00; // COM10: default polarity
+        rom_addr[8]  = 8'h70; rom_data[8]  = 8'h3A; // SCALING_XSC
+        rom_addr[9]  = 8'h71; rom_data[9]  = 8'h35; // SCALING_YSC
+        rom_addr[10] = 8'h15; rom_data[10] = 8'h00; // COM10: normal polarity
     end
 
     localparam DEV_WR = 8'h42;
@@ -134,7 +131,7 @@ module ov7670_init(
                     scl <= 1'b1;
                     if (bit_cnt == 0) begin
                         scl <= 1'b0;
-                        sda_oe <= 1'b0; // ACK slot ignore
+                        sda_oe <= 1'b0;
                         state <= S_LOAD_REG;
                     end else begin
                         bit_cnt <= bit_cnt - 1'b1;
@@ -159,7 +156,7 @@ module ov7670_init(
                     scl <= 1'b1;
                     if (bit_cnt == 0) begin
                         scl <= 1'b0;
-                        sda_oe <= 1'b0; // ACK slot ignore
+                        sda_oe <= 1'b0;
                         state <= S_LOAD_DAT;
                     end else begin
                         bit_cnt <= bit_cnt - 1'b1;
@@ -184,7 +181,7 @@ module ov7670_init(
                     scl <= 1'b1;
                     if (bit_cnt == 0) begin
                         scl <= 1'b0;
-                        sda_oe <= 1'b0; // ACK slot ignore
+                        sda_oe <= 1'b0;
                         state <= S_STOP1;
                     end else begin
                         bit_cnt <= bit_cnt - 1'b1;
@@ -202,7 +199,7 @@ module ov7670_init(
                 S_STOP2: begin
                     sda_out <= 1'b1;
                     if (reg_index == 0) begin
-                        wait_cnt <= 20'd1000000; // ~10ms @100MHz
+                        wait_cnt <= 24'd2000; // 10ms @ 200kHz tick
                         state <= S_WAIT1MS;
                     end else if (reg_index == 10) begin
                         state <= S_DONE;

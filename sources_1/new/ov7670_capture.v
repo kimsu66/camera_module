@@ -6,28 +6,25 @@ module ov7670_capture(
     input  wire       href,
     input  wire [7:0] d,
 
-    output reg [15:0] pixel_data,
+    output reg [7:0]  pixel_data,
     output reg        pixel_valid,
-    output reg [14:0] addr
+    output reg [16:0] addr          // 17-bit: 320*240=76800
 );
 
     reg byte_sel = 1'b0;
     reg [7:0] high_byte = 8'd0;
 
-    reg [9:0]  x       = 10'd0; // 0~639
-    reg [8:0]  y       = 9'd0;  // 0~479
+    reg [9:0]  x       = 10'd0;  // 0..639 (VGA)
+    reg [8:0]  y       = 9'd0;   // 0..479 (VGA)
     reg        vsync_d = 1'b0;
 
-    // 수평 4픽셀 평균용 누산기
-    // R: 5bit x 4 = 7bit, G: 6bit x 4 = 8bit, B: 5bit x 4 = 7bit
-    reg [6:0] r_sum = 7'd0;
-    reg [7:0] g_sum = 8'd0;
-    reg [6:0] b_sum = 7'd0;
-
-    // 4번째 픽셀 포함 최종 합산 (combinatorial)
-    wire [6:0] r_final = r_sum + {2'b0, high_byte[7:3]};
-    wire [7:0] g_final = g_sum + {2'b0, high_byte[2:0], d[7:5]};
-    wire [6:0] b_final = b_sum + {2'b0, d[4:0]};
+    // RGB565 -> grayscale
+    // R5=high_byte[7:3], G6={high_byte[2:0],d[7:5]}, B5=d[4:0]
+    // gray8 = (R5 + G6 + B5) * 2  (max=250, fits 8-bit)
+    wire [6:0] rgb_sum = {2'b0, high_byte[7:3]}
+                       + {1'b0, high_byte[2:0], d[7:5]}
+                       + {2'b0, d[4:0]};
+    wire [7:0] gray8   = {rgb_sum, 1'b0};
 
     always @(posedge pclk) begin
         pixel_valid <= 1'b0;
@@ -45,25 +42,15 @@ module ov7670_capture(
             end else begin
                 byte_sel <= 1'b0;
 
-                // RGB565: R=high_byte[7:3], G={high_byte[2:0],d[7:5]}, B=d[4:0]
-
-                // 수평 누산: 그룹 첫 픽셀(x%4==0)이면 리셋, 아니면 누적
-                if (x[1:0] == 2'b00) begin
-                    r_sum <= {2'b0, high_byte[7:3]};
-                    g_sum <= {2'b0, high_byte[2:0], d[7:5]};
-                    b_sum <= {2'b0, d[4:0]};
-                end else begin
-                    r_sum <= r_sum + {2'b0, high_byte[7:3]};
-                    g_sum <= g_sum + {2'b0, high_byte[2:0], d[7:5]};
-                    b_sum <= b_sum + {2'b0, d[4:0]};
-                end
-
-                // 그룹 마지막(x%4==3), y도 4의 배수일 때 4픽셀 평균 저장
-                // NBA 특성상 r_sum은 앞 3픽셀 합 → 현재 픽셀 직접 합산해서 평균
-                if (x[1:0] == 2'b11 && y[1:0] == 2'b00) begin
-                    pixel_data  <= {r_final[6:2], g_final[7:2], b_final[6:2]};
+                // 2:1 서브샘플링: x짝수, y짝수 픽셀만 저장
+                if (x[0] == 1'b0 && y[0] == 1'b0) begin
+                    pixel_data  <= gray8;
                     pixel_valid <= 1'b1;
-                    addr <= ({1'b0, y[8:2], 7'd0} + {3'b0, y[8:2], 5'd0} + {7'b0, x[9:2]});
+                    // addr = (y/2)*320 + (x/2)
+                    //      = y[8:1]*256 + y[8:1]*64 + x[9:1]
+                    addr <= ({1'b0, y[8:1], 8'b0}
+                           + {3'b0, y[8:1], 6'b0}
+                           + {8'b0, x[9:1]});
                 end
 
                 if (x == 10'd639) begin
