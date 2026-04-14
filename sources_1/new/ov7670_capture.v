@@ -19,9 +19,9 @@ module ov7670_capture(
     reg [7:0] y_val = 8'd0;   // 레벨 보정된 Y값
 
     // YUV Y 범위 16~235 → 0~255 으로 스트레치
-    // (Y - 16) * 1.25 = (Y-16) + (Y-16)/4 → max 219*1.25=273 → clamp 255
+    // (Y - 16) * 1.5 = (Y-16) + (Y-16)/2 → max 219*1.5=329 → clamp 255
     wire [7:0] y_sub    = (d > 8'd16) ? (d - 8'd16) : 8'd0;
-    wire [9:0] y_scaled = {2'b0, y_sub} + {4'b0, y_sub[7:2]};
+    wire [9:0] y_scaled = {2'b0, y_sub} + {3'b0, y_sub[7:1]};  // × 1.5
     wire [7:0] y_adj    = y_scaled[9:8] ? 8'd255 : y_scaled[7:0];
 
     reg [9:0]  x       = 10'd0;

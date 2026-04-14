@@ -35,7 +35,7 @@ module ov7670_init(
         // 기본 설정
         rom_addr[0]  = 8'h12; rom_data[0]  = 8'h80; // COM7: software reset
         rom_addr[1]  = 8'h11; rom_data[1]  = 8'h00; // CLKRC: no prescale
-        rom_addr[2]  = 8'h12; rom_data[2]  = 8'h04; // COM7: RGB565, VGA
+        rom_addr[2]  = 8'h12; rom_data[2]  = 8'h06; // COM7: RGB565 + 내부 컬러바 (bit[1]=1)
         rom_addr[3]  = 8'h40; rom_data[3]  = 8'hF0; // COM15: full range (0xFF) + RGB565 (bits[5:4]=11)
         rom_addr[4]  = 8'h3A; rom_data[4]  = 8'h04; // TSLB: normal sequence
         rom_addr[5]  = 8'h3D; rom_data[5]  = 8'hC0; // COM13: gamma enable + UV auto
@@ -70,8 +70,9 @@ module ov7670_init(
 
     localparam DEV_WR = 8'h42;
 
-    reg [4:0]  state = 0;      // 5-bit: 0~15 states
-    reg [3:0]  bit_cnt = 0;
+    reg [4:0]  state    = 0;
+    reg [4:0]  ack_next = 0;   // ACK 후 이동할 상태
+    reg [3:0]  bit_cnt  = 0;
     reg [7:0]  shreg = 8'd0;
     reg [5:0]  reg_index = 0;  // 6-bit: 0~63
     reg [23:0] wait_cnt = 0;
@@ -91,7 +92,9 @@ module ov7670_init(
                S_STOP1     = 12,
                S_STOP2     = 13,
                S_WAIT1MS   = 14,
-               S_DONE      = 15;
+               S_DONE      = 15,
+               S_ACK_H     = 16,  // 9번째 클럭 High (SCCB DC don't-care bit)
+               S_ACK_L     = 17;  // 9번째 클럭 Low → ack_next로 이동
 
     initial begin
         scl     = 1'b1;
@@ -146,9 +149,10 @@ module ov7670_init(
                 S_SEND_DEV1: begin
                     scl <= 1'b1;
                     if (bit_cnt == 0) begin
-                        scl    <= 1'b0;
-                        sda_oe <= 1'b0;
-                        state  <= S_LOAD_REG;
+                        scl      <= 1'b0;
+                        sda_oe   <= 1'b0;   // SDA 해제 (9번째 클럭 준비)
+                        ack_next <= S_LOAD_REG;
+                        state    <= S_ACK_H;
                     end else begin
                         bit_cnt <= bit_cnt - 1'b1;
                         state   <= S_SEND_DEV0;
@@ -171,9 +175,10 @@ module ov7670_init(
                 S_SEND_REG1: begin
                     scl <= 1'b1;
                     if (bit_cnt == 0) begin
-                        scl    <= 1'b0;
-                        sda_oe <= 1'b0;
-                        state  <= S_LOAD_DAT;
+                        scl      <= 1'b0;
+                        sda_oe   <= 1'b0;
+                        ack_next <= S_LOAD_DAT;
+                        state    <= S_ACK_H;
                     end else begin
                         bit_cnt <= bit_cnt - 1'b1;
                         state   <= S_SEND_REG0;
@@ -196,9 +201,10 @@ module ov7670_init(
                 S_SEND_DAT1: begin
                     scl <= 1'b1;
                     if (bit_cnt == 0) begin
-                        scl    <= 1'b0;
-                        sda_oe <= 1'b0;
-                        state  <= S_STOP1;
+                        scl      <= 1'b0;
+                        sda_oe   <= 1'b0;
+                        ack_next <= S_STOP1;
+                        state    <= S_ACK_H;
                     end else begin
                         bit_cnt <= bit_cnt - 1'b1;
                         state   <= S_SEND_DAT0;
@@ -240,6 +246,17 @@ module ov7670_init(
                     sda_oe  <= 1'b1;
                     sda_out <= 1'b1;
                     state   <= S_DONE;
+                end
+
+                S_ACK_H: begin
+                    scl   <= 1'b1;   // 9번째 클럭 High
+                    state <= S_ACK_L;
+                end
+
+                S_ACK_L: begin
+                    scl    <= 1'b0;   // 9번째 클럭 Low
+                    sda_oe <= 1'b1;   // SDA 다시 제어
+                    state  <= ack_next;
                 end
             endcase
         end
