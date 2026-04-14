@@ -116,7 +116,7 @@ module top(
     // VGA output (grayscale)
     // =========================
     wire [3:0] gray4 = pixel_out[7:4];
-    
+
     assign vgaRed   = (vga_active && img_active) ? gray4 : 4'b0000;
     assign vgaGreen = (vga_active && img_active) ? gray4 : 4'b0000;
     assign vgaBlue  = (vga_active && img_active) ? gray4 : 4'b0000;
