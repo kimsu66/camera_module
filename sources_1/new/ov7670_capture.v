@@ -1,45 +1,38 @@
 `timescale 1ns / 1ps
 
-module ov7670_capture(
-    input  wire        pclk,
-    input  wire        vsync,
-    input  wire        href,
-    input  wire  [7:0] d,
+// OV7670이 YUV422 (YUYV) 모드로 동작 중
+// 바이트 순서: Y0 U0 Y1 V0 Y2 U1 Y3 V1 ...
+// 첫 번째 바이트 = Y (밝기), 두 번째 바이트 = U/V (색차, 무시)
 
-    output reg  [15:0] pixel_data,
-    output reg         pixel_valid,
-    output reg  [16:0] addr
+module ov7670_capture(
+    input  wire       pclk,
+    input  wire       vsync,
+    input  wire       href,
+    input  wire [7:0] d,
+
+    output reg [7:0]  pixel_data,
+    output reg        pixel_valid,
+    output reg [16:0] addr
 );
 
     reg byte_sel = 1'b0;
-    reg [7:0] low_byte = 8'd0;  // 첫 번째 바이트 = low byte (GGGBBBBB)
+    reg [7:0] y_val = 8'd0;   // 레벨 보정된 Y값
+
+    // YUV Y 범위 16~235 → 0~255 으로 스트레치
+    // (Y - 16) * 1.25 = (Y-16) + (Y-16)/4 → max 219*1.25=273 → clamp 255
+    wire [7:0] y_sub    = (d > 8'd16) ? (d - 8'd16) : 8'd0;
+    wire [9:0] y_scaled = {2'b0, y_sub} + {4'b0, y_sub[7:2]};
+    wire [7:0] y_adj    = y_scaled[9:8] ? 8'd255 : y_scaled[7:0];
 
     reg [9:0]  x       = 10'd0;
     reg [8:0]  y       = 9'd0;
     reg        vsync_d = 1'b0;
 
-    // RGB565: 첫 번째 바이트 = low byte (GGGBBBBB), 두 번째 = high byte (RRRRRGGG)
-    wire [4:0] r5 = d[7:3];
-    wire [5:0] g6 = {d[2:0], low_byte[7:5]};
-    wire [4:0] b5 = low_byte[4:0];
+    // 2x2 평균 필터 (aliasing 저감)
+    reg [7:0] y_prev = 8'd0;
+    reg [8:0] y_line [0:319];  // 이전 행의 수평 합
 
-    // 2x2 평균 필터 - 채널별
-    reg [4:0] r_prev = 5'd0;
-    reg [5:0] g_prev = 6'd0;
-    reg [4:0] b_prev = 5'd0;
-
-    reg [5:0] r_line [0:319];   // 수평 R 합 (6-bit, max 62)
-    reg [6:0] g_line [0:319];   // 수평 G 합 (7-bit, max 126)
-    reg [5:0] b_line [0:319];   // 수평 B 합 (6-bit, max 62)
-
-    wire [5:0] r_hsum = {1'b0, r_prev} + {1'b0, r5};
-    wire [6:0] g_hsum = {1'b0, g_prev} + {1'b0, g6};
-    wire [5:0] b_hsum = {1'b0, b_prev} + {1'b0, b5};
-
-    // 2x2 합 >> 2 = 평균
-    wire [4:0] r_out = ({1'b0, r_line[x[9:1]]} + {1'b0, r_hsum}) >> 2;
-    wire [5:0] g_out = ({1'b0, g_line[x[9:1]]} + {1'b0, g_hsum}) >> 2;
-    wire [4:0] b_out = ({1'b0, b_line[x[9:1]]} + {1'b0, b_hsum}) >> 2;
+    wire [8:0] y_hsum = {1'b0, y_prev} + {1'b0, y_val};
 
     always @(posedge pclk) begin
         pixel_valid <= 1'b0;
@@ -55,26 +48,22 @@ module ov7670_capture(
         end
         else begin
             if (!byte_sel) begin
-                low_byte <= d;
+                y_val    <= y_adj;      // 첫 번째 바이트 = Y, 레벨 보정 후 저장
                 byte_sel <= 1'b1;
             end else begin
-                byte_sel <= 1'b0;
+                byte_sel <= 1'b0;       // 두 번째 바이트(U/V) 무시
 
                 if (x[0] == 1'b0) begin
-                    // 짝수 픽셀: 채널별 이전값 저장
-                    r_prev <= r5;
-                    g_prev <= g6;
-                    b_prev <= b5;
+                    // 짝수 픽셀: Y 저장
+                    y_prev <= y_val;
                 end else begin
                     // 홀수 픽셀: 수평 쌍 완성
                     if (y[0] == 1'b0) begin
-                        // 짝수 행: 수평 합 저장
-                        r_line[x[9:1]] <= r_hsum;
-                        g_line[x[9:1]] <= g_hsum;
-                        b_line[x[9:1]] <= b_hsum;
+                        // 짝수 행: line_buf에 저장
+                        y_line[x[9:1]] <= y_hsum;
                     end else begin
-                        // 홀수 행: 2x2 평균 출력 → RGB565로 조합
-                        pixel_data  <= {r_out, g_out, b_out};
+                        // 홀수 행: 2x2 평균 출력
+                        pixel_data  <= ({1'b0, y_line[x[9:1]]} + {1'b0, y_hsum}) >> 2;
                         pixel_valid <= 1'b1;
                         addr <= ({1'b0, y[8:1], 8'b0}
                                + {3'b0, y[8:1], 6'b0}
