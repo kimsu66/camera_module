@@ -36,7 +36,7 @@ module ov7670_init(
         rom_addr[0]  = 8'h12; rom_data[0]  = 8'h80; // COM7: software reset
         rom_addr[1]  = 8'h11; rom_data[1]  = 8'h00; // CLKRC: no prescale
         rom_addr[2]  = 8'h12; rom_data[2]  = 8'h04; // COM7: RGB565, VGA
-        rom_addr[3]  = 8'h40; rom_data[3]  = 8'hD0; // COM15: full range + RGB565
+        rom_addr[3]  = 8'h40; rom_data[3]  = 8'hF0; // COM15: full range (0xFF) + RGB565 (bits[5:4]=11)
         rom_addr[4]  = 8'h3A; rom_data[4]  = 8'h04; // TSLB: normal sequence
         rom_addr[5]  = 8'h3D; rom_data[5]  = 8'hC0; // COM13: gamma enable + UV auto
         rom_addr[6]  = 8'h0C; rom_data[6]  = 8'h00; // COM3: no scaling

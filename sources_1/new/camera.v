@@ -56,7 +56,7 @@ module top(
     // =========================
     // OV7670 capture (QVGA 320x240, grayscale)
     // =========================
-    wire [7:0]  pixel_data;
+    wire [15:0] pixel_data;
     wire        pixel_valid;
     wire [16:0] write_addr;
 
@@ -97,9 +97,9 @@ module top(
     wire [16:0] read_addr = {1'b0, fb_y, 8'b0} + {3'b0, fb_y, 6'b0} + {8'b0, fb_x};
 
     // =========================
-    // Frame buffer (dual-port BRAM, 320x240 x 8-bit grayscale)
+    // Frame buffer (dual-port BRAM, 320x240 x 16-bit RGB565)
     // =========================
-    wire [7:0] pixel_out;
+    wire [15:0] pixel_out;
 
     frame_buffer u_fb (
         .clk_write  (cam_pclk),
@@ -113,13 +113,15 @@ module top(
     );
 
     // =========================
-    // VGA output (grayscale)
+    // VGA output - 진단 모드: 첫 번째 바이트(low byte)만 흑백 출력
+    // pixel_out[7:0]  = low_byte  (첫 번째 수신 바이트: YUV→Y, RGB565→GGGBBBBB)
+    // pixel_out[15:8] = high byte (두 번째 수신 바이트: YUV→Cb/Cr, RGB565→RRRRRGGG)
     // =========================
-    wire [3:0] gray4 = pixel_out[7:4];
+    wire [3:0] diag4 = pixel_out[7:4];  // 첫 번째 바이트 상위 4비트
 
-    assign vgaRed   = (vga_active && img_active) ? gray4 : 4'b0000;
-    assign vgaGreen = (vga_active && img_active) ? gray4 : 4'b0000;
-    assign vgaBlue  = (vga_active && img_active) ? gray4 : 4'b0000;
+    assign vgaRed   = (vga_active && img_active) ? diag4 : 4'b0000;
+    assign vgaGreen = (vga_active && img_active) ? diag4 : 4'b0000;
+    assign vgaBlue  = (vga_active && img_active) ? diag4 : 4'b0000;
 
     // =========================
     // LEDs
