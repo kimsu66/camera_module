@@ -35,8 +35,8 @@ module ov7670_init(
         // 기본 설정
         rom_addr[0]  = 8'h12; rom_data[0]  = 8'b1000_0000; // COM7: software reset
         rom_addr[1]  = 8'h11; rom_data[1]  = 8'b0000_0000; // CLKRC: no prescale
-        rom_addr[2]  = 8'h12; rom_data[2]  = 8'b0000_0000; // COM7: YUV, color bar off
-        rom_addr[3]  = 8'h40; rom_data[3]  = 8'b0000_0000; // COM15: default Y range [10..F0], RGB565 bits 제거
+        rom_addr[2]  = 8'h12; rom_data[2]  = 8'b0000_0100; // COM7: RGB 모드 (bit[2]=1)
+        rom_addr[3]  = 8'h40; rom_data[3]  = 8'b1101_0000; // COM15: full range + RGB565
         rom_addr[4]  = 8'h3A; rom_data[4]  = 8'b0000_0100; // TSLB: YUYV 유지
         rom_addr[5]  = 8'h3D; rom_data[5]  = 8'b1100_0000; // COM13: gamma + UV auto, bit0=0 유지
         rom_addr[6]  = 8'h0C; rom_data[6]  = 8'b0000_0000; // COM3: no scaling
