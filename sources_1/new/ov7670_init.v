@@ -33,39 +33,39 @@ module ov7670_init(
 
     initial begin
         // 기본 설정
-        rom_addr[0]  = 8'h12; rom_data[0]  = 8'h80; // COM7: software reset
-        rom_addr[1]  = 8'h11; rom_data[1]  = 8'h00; // CLKRC: no prescale
-        rom_addr[2]  = 8'h12; rom_data[2]  = 8'h00; // COM7: YUV, color bar off
-        rom_addr[3]  = 8'h40; rom_data[3]  = 8'h00; // COM15: default Y range [10..F0], RGB565 bits 제거
-        rom_addr[4]  = 8'h3A; rom_data[4]  = 8'h04; // TSLB: YUYV 유지
-        rom_addr[5]  = 8'h3D; rom_data[5]  = 8'hC0; // COM13: gamma + UV auto, bit0=0 유지
-        rom_addr[6]  = 8'h0C; rom_data[6]  = 8'h00; // COM3: no scaling
-        rom_addr[7]  = 8'h3E; rom_data[7]  = 8'h00; // COM14: normal PCLK
-        rom_addr[8]  = 8'h70; rom_data[8]  = 8'h3A; // SCALING_XSC
-        rom_addr[9]  = 8'h71; rom_data[9]  = 8'h35; // SCALING_YSC
-        rom_addr[10] = 8'h15; rom_data[10] = 8'h00; // COM10: normal polarity
+        rom_addr[0]  = 8'h12; rom_data[0]  = 8'b1000_0000; // COM7: software reset
+        rom_addr[1]  = 8'h11; rom_data[1]  = 8'b0000_0000; // CLKRC: no prescale
+        rom_addr[2]  = 8'h12; rom_data[2]  = 8'b0000_0000; // COM7: YUV, color bar off
+        rom_addr[3]  = 8'h40; rom_data[3]  = 8'b0000_0000; // COM15: default Y range [10..F0], RGB565 bits 제거
+        rom_addr[4]  = 8'h3A; rom_data[4]  = 8'b0000_0100; // TSLB: YUYV 유지
+        rom_addr[5]  = 8'h3D; rom_data[5]  = 8'b1100_0000; // COM13: gamma + UV auto, bit0=0 유지
+        rom_addr[6]  = 8'h0C; rom_data[6]  = 8'b0000_0000; // COM3: no scaling
+        rom_addr[7]  = 8'h3E; rom_data[7]  = 8'b0000_0000; // COM14: normal PCLK
+        rom_addr[8]  = 8'h70; rom_data[8]  = 8'b0011_1010; // SCALING_XSC
+        rom_addr[9]  = 8'h71; rom_data[9]  = 8'b0011_0101; // SCALING_YSC
+        rom_addr[10] = 8'h15; rom_data[10] = 8'b0000_0000; // COM10: normal polarity
         // AGC / AEC (자동 노출 및 게인)
-        rom_addr[11] = 8'h13; rom_data[11] = 8'he0; // COM8: AGC/AEC 일시 비활성
-        rom_addr[12] = 8'h00; rom_data[12] = 8'h00; // GAIN: 0
-        rom_addr[13] = 8'h10; rom_data[13] = 8'h00; // AECH: exposure = 0
-        rom_addr[14] = 8'h14; rom_data[14] = 8'h18; // COM9: max AGC 4x
-        rom_addr[15] = 8'h13; rom_data[15] = 8'he5; // COM8: AGC+AEC+AWB 활성화
+        rom_addr[11] = 8'h13; rom_data[11] = 8'b1110_0000; // COM8: AGC/AEC 일시 비활성
+        rom_addr[12] = 8'h00; rom_data[12] = 8'b0000_0000; // GAIN: 0
+        rom_addr[13] = 8'h10; rom_data[13] = 8'b0000_0000; // AECH: exposure = 0
+        rom_addr[14] = 8'h14; rom_data[14] = 8'b0001_1000; // COM9: max AGC 4x
+        rom_addr[15] = 8'h13; rom_data[15] = 8'b1110_0101; // COM8: AGC+AEC+AWB 활성화
         // 감마 커브 (밝은 영역 계조 개선)
-        rom_addr[16] = 8'h7a; rom_data[16] = 8'h20;
-        rom_addr[17] = 8'h7b; rom_data[17] = 8'h10;
-        rom_addr[18] = 8'h7c; rom_data[18] = 8'h1e;
-        rom_addr[19] = 8'h7d; rom_data[19] = 8'h35;
-        rom_addr[20] = 8'h7e; rom_data[20] = 8'h5a;
-        rom_addr[21] = 8'h7f; rom_data[21] = 8'h69;
-        rom_addr[22] = 8'h80; rom_data[22] = 8'h76;
-        rom_addr[23] = 8'h81; rom_data[23] = 8'h80;
-        rom_addr[24] = 8'h82; rom_data[24] = 8'h88;
-        rom_addr[25] = 8'h83; rom_data[25] = 8'h8f;
-        rom_addr[26] = 8'h84; rom_data[26] = 8'h96;
-        rom_addr[27] = 8'h85; rom_data[27] = 8'ha3;
-        rom_addr[28] = 8'h86; rom_data[28] = 8'haf;
-        rom_addr[29] = 8'h87; rom_data[29] = 8'hc4;
-        rom_addr[30] = 8'h88; rom_data[30] = 8'hd7;
+        rom_addr[16] = 8'h7a; rom_data[16] = 8'b0010_0000;
+        rom_addr[17] = 8'h7b; rom_data[17] = 8'b0001_0000;
+        rom_addr[18] = 8'h7c; rom_data[18] = 8'b0001_1110;
+        rom_addr[19] = 8'h7d; rom_data[19] = 8'b0011_0101;
+        rom_addr[20] = 8'h7e; rom_data[20] = 8'b0101_1010;
+        rom_addr[21] = 8'h7f; rom_data[21] = 8'b0110_1001;
+        rom_addr[22] = 8'h80; rom_data[22] = 8'b0111_0110;
+        rom_addr[23] = 8'h81; rom_data[23] = 8'b1000_0000;
+        rom_addr[24] = 8'h82; rom_data[24] = 8'b1000_1000;
+        rom_addr[25] = 8'h83; rom_data[25] = 8'b1000_1111;
+        rom_addr[26] = 8'h84; rom_data[26] = 8'b1001_0110;
+        rom_addr[27] = 8'h85; rom_data[27] = 8'b1010_0011;
+        rom_addr[28] = 8'h86; rom_data[28] = 8'b1010_1111;
+        rom_addr[29] = 8'h87; rom_data[29] = 8'b1100_0100;
+        rom_addr[30] = 8'h88; rom_data[30] = 8'b1101_0111;
     end
 
     localparam DEV_WR = 8'h42;
