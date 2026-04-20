@@ -3,8 +3,9 @@
 module ov7670_init(
     input  wire clk,      // 100MHz
     input  wire resetn,
-    output reg  scl,
     inout  wire sda,
+    
+    output reg  scl,
     output reg  done
 );
 

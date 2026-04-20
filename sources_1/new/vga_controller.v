@@ -2,6 +2,7 @@
 
 module vga_controller(
     input  wire        clk,       // 25MHz VGA pixel clock
+    
     output reg [9:0]   x = 10'd0,
     output reg [9:0]   y = 10'd0,
     output wire        Hsync,

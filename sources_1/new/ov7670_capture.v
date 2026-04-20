@@ -54,7 +54,8 @@ module ov7670_capture(
                     x <= 10'd0;
                     if (y < 9'd479)
                         y <= y + 9'd1;
-                end else begin
+                end 
+                else begin
                     x <= x + 10'd1;
                 end
             end
