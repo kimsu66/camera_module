@@ -54,9 +54,9 @@ module top(
     );
 
     // =========================
-    // OV7670 capture (QVGA 320x240, grayscale)
+    // OV7670 capture (QVGA 320x240, RGB444)
     // =========================
-    wire  [7:0] pixel_data;
+    wire [11:0] pixel_data;
     wire        pixel_valid;
     wire [16:0] write_addr;
 
@@ -97,9 +97,9 @@ module top(
     wire [16:0] read_addr = {1'b0, fb_y, 8'b0} + {3'b0, fb_y, 6'b0} + {8'b0, fb_x};
 
     // =========================
-    // Frame buffer (dual-port BRAM, 320x240 x 8-bit grayscale Y)
+    // Frame buffer (dual-port BRAM, 320x240 x 12-bit RGB444)
     // =========================
-    wire  [7:0] pixel_out;
+    wire [11:0] pixel_out;
 
     frame_buffer u_fb (
         .clk_write  (cam_pclk),
@@ -113,13 +113,12 @@ module top(
     );
 
     // =========================
-    // VGA output (YUV Y채널 흑백)
+    // VGA output (RGB444)
+    // pixel_out[11:8]=R, [7:4]=G, [3:0]=B
     // =========================
-    wire [3:0] gray4 = pixel_out[7:4];
-
-    assign vgaRed   = (vga_active && img_active) ? gray4 : 4'b0000;
-    assign vgaGreen = (vga_active && img_active) ? gray4 : 4'b0000;
-    assign vgaBlue  = (vga_active && img_active) ? gray4 : 4'b0000;
+    assign vgaRed   = (vga_active && img_active) ? pixel_out[11:8] : 4'b0000;
+    assign vgaGreen = (vga_active && img_active) ? pixel_out[7:4]  : 4'b0000;
+    assign vgaBlue  = (vga_active && img_active) ? pixel_out[3:0]  : 4'b0000;
 
     // =========================
     // LEDs

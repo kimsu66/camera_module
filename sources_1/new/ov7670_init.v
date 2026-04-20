@@ -27,17 +27,17 @@ module ov7670_init(
     end
 
     // -----------------------------------------
-    // init ROM - VGA RGB565 + AGC/AEC + Gamma
+    // init ROM - VGA RGB444 + AGC/AEC + Gamma
     // -----------------------------------------
-    reg [7:0] rom_addr [0:30];
-    reg [7:0] rom_data [0:30];
+    reg [7:0] rom_addr [0:31];
+    reg [7:0] rom_data [0:31];
 
     initial begin
         // 기본 설정
         rom_addr[0]  = 8'h12; rom_data[0]  = 8'b1000_0000; // COM7: software reset
         rom_addr[1]  = 8'h11; rom_data[1]  = 8'b0000_0000; // CLKRC: no prescale
         rom_addr[2]  = 8'h12; rom_data[2]  = 8'b0000_0100; // COM7: RGB 모드 (bit[2]=1)
-        rom_addr[3]  = 8'h40; rom_data[3]  = 8'b1101_0000; // COM15: full range + RGB565
+        rom_addr[3]  = 8'h40; rom_data[3]  = 8'b1111_0000; // COM15: full range + RGB444
         rom_addr[4]  = 8'h3A; rom_data[4]  = 8'b0000_0100; // TSLB: YUYV 유지
         rom_addr[5]  = 8'h3D; rom_data[5]  = 8'b1100_0000; // COM13: gamma + UV auto, bit0=0 유지
         rom_addr[6]  = 8'h0C; rom_data[6]  = 8'b0000_0000; // COM3: no scaling
@@ -67,6 +67,7 @@ module ov7670_init(
         rom_addr[28] = 8'h86; rom_data[28] = 8'b1010_1111;
         rom_addr[29] = 8'h87; rom_data[29] = 8'b1100_0100;
         rom_addr[30] = 8'h88; rom_data[30] = 8'b1101_0111;
+        rom_addr[31] = 8'h8C; rom_data[31] = 8'b0000_0010; // RGB444: enable (xRGB)
     end
 
     localparam DEV_WR = 8'h42;
@@ -224,7 +225,7 @@ module ov7670_init(
                     if (reg_index == 0) begin
                         wait_cnt <= 24'd2000; // 10ms @ 200kHz tick
                         state    <= S_WAIT1MS;
-                    end else if (reg_index == 30) begin
+                    end else if (reg_index == 31) begin
                         state <= S_DONE;
                     end else begin
                         reg_index <= reg_index + 1'b1;
