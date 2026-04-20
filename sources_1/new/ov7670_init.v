@@ -67,7 +67,7 @@ module ov7670_init(
         rom_addr[28] = 8'h86; rom_data[28] = 8'b1010_1111;
         rom_addr[29] = 8'h87; rom_data[29] = 8'b1100_0100;
         rom_addr[30] = 8'h88; rom_data[30] = 8'b1101_0111;
-        rom_addr[31] = 8'h8C; rom_data[31] = 8'b0000_0010; // RGB444: enable (xRGB)
+        rom_addr[31] = 8'h8C; rom_data[31] = 8'b0000_0011; // RGB444: enable (RGBx)
     end
 
     localparam DEV_WR = 8'h42;

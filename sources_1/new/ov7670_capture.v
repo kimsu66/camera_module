@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 // OV7670 RGB444 모드 (VGA 640x480)
-// 바이트 순서: 상위바이트 {xxxx,R[3:0]}, 하위바이트 {G[3:0],B[3:0]}  (xRGB444)
+// 바이트 순서: 상위바이트 {R[3:0],G[3:0]}, 하위바이트 {B[3:0],xxxx}  (RGBx444)
 // 짝수 행 + 짝수 픽셀만 출력 → 320x240 다운스케일
 
 module ov7670_capture(
@@ -16,7 +16,7 @@ module ov7670_capture(
 );
 
     reg byte_sel = 1'b0;
-    reg [7:0] high_byte = 8'd0;  // xRGB444 상위 바이트 (xxxx RRRR)
+    reg [7:0] high_byte = 8'd0;  // RGBx444 상위 바이트 (RRRR GGGG)
 
     reg [9:0] x = 10'd0;
     reg [8:0] y = 9'd0;
@@ -43,7 +43,7 @@ module ov7670_capture(
 
                 // 짝수 행 + 짝수 픽셀만 출력 (2x2 픽셀 스킵)
                 if (x[0] == 1'b0 && y[0] == 1'b0) begin
-                    pixel_data  <= {high_byte[3:0], d};  // {R[3:0], G[3:0], B[3:0]}
+                    pixel_data  <= {high_byte, d[7:4]};  // {R[3:0], G[3:0], B[3:0]}
                     pixel_valid <= 1'b1;
                     addr        <= ({1'b0, y[8:1], 8'b0}
                                  + {3'b0, y[8:1], 6'b0}
